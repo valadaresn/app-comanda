@@ -1,0 +1,12 @@
+react-router-dom
+@types/react-router-dom
+@mui/material
+@emotion/react
+@emotion/styled
+firebase
+@reduxjs/toolkit
+react-redux
+@types/react-redux
+zod
+@hookform/resolvers
+react-hook-form
