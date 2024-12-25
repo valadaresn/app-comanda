@@ -3,12 +3,13 @@ import { getFirestore } from "firebase/firestore";
 
 // Configuração do Firebase
 const firebaseConfig = {
-  apiKey: "SUA_API_KEY",
-  authDomain: "SEU_AUTH_DOMAIN",
-  projectId: "SEU_PROJECT_ID",
-  storageBucket: "SEU_STORAGE_BUCKET",
-  messagingSenderId: "SEU_MESSAGING_SENDER_ID",
-  appId: "SEU_APP_ID",
+  apiKey: "AIzaSyCqTKH8yuXYhZjW5TxZxDU3aY_rHfT4zlo",
+  authDomain: "eorder-ba17c.firebaseapp.com",
+  projectId: "eorder-ba17c",
+  storageBucket: "eorder-ba17c.firebasestorage.app",
+  messagingSenderId: "544528581262",
+  appId: "1:544528581262:web:f989f0e656808f13447fdf",
+  measurementId: "G-1K94253V27"
 };
 
 // Inicializar Firebase

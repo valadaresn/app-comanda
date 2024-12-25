@@ -1,83 +1,124 @@
-import React, { useState, useEffect } from "react";
-import { List, ListItem, ListItemText, Container, Typography } from "@mui/material";
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { orderBy } from 'firebase/firestore';
+import { collectionNames } from '../config/firebaseConfig';
+import { listenToCollection } from '../services/FirebaseService';
+import { Category } from '../models/CategorySchema';
+import { Button, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress, Card, CardContent, CardHeader, Fab } from '@mui/material';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { pink } from '@mui/material/colors';
 
-import { collectionNames } from "../../firebaseConfig";
+// Criar um tema personalizado com a paleta de cores rosa
+const theme = createTheme({
+  palette: {
+    primary: pink,
+  },
+});
 
-function CategoryList() {
-  const [categories, setCategories] = useState([]);
-  const [draggedIndex, setDraggedIndex] = useState(null); // Para identificar o item arrastado
+const CategoryList = () => {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
-  
-    const unsubscribe = listenToCollection(collectionNames.categories, (data) => {
-      const sortedData = data.sort((a, b) => a.order - b.order);
-      setCategories(sortedData);
-    });
+    const unsubscribe = listenToCollection(
+      collectionNames.categories,
+      (data: Category[]) => {
+        setCategories(data);
+        setLoading(false);
+      },
+      [orderBy('order')]
+    );
     return () => unsubscribe();
   }, []);
 
-  const handleDragStart = (e, index) => {
-    setDraggedIndex(index); // Armazena o índice do item arrastado
-    e.target.style.opacity = "0.5"; // Adiciona efeito visual ao item arrastado
+  const handleEdit = (id: string) => {
+    navigate(`/CategoryForm/${id}`);
   };
 
-  const handleDragOver = (e) => {
-    e.preventDefault(); // Permite que o item seja solto
+  const handleNewCategory = () => {
+    navigate(`/CategoryForm`);
   };
 
-  const handleDrop = async (e, dropIndex) => {
-    e.preventDefault();
-    const updatedCategories = [...categories];
-    const [draggedItem] = updatedCategories.splice(draggedIndex, 1); // Remove o item arrastado
-    updatedCategories.splice(dropIndex, 0, draggedItem); // Insere o item na nova posição
-
-    // Reordena os itens localmente
-    const reorderedCategories = updatedCategories.map((cat, index) => ({
-      ...cat,
-      order: index,
-    }));
-
-    setCategories(reorderedCategories); // Atualiza o estado local
-
-    // Atualiza o Firebase
-    for (const category of reorderedCategories) {
-      await updateDocument(collectionNames.categories, category.id, { order: category.order });
-    }
-
-    setDraggedIndex(null); // Limpa o índice do item arrastado
-  };
-
-  const handleDragEnd = (e) => {
-    e.target.style.opacity = "1"; // Restaura a opacidade do item
-  };
+  if (loading) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh',
+          width: '100vw',
+        }}
+      >
+        <CircularProgress />
+      </div>
+    );
+  }
 
   return (
-    <Container>
-      <Typography variant="h4" gutterBottom>
-        Lista de Categorias
-      </Typography>
-      <List>
-        {categories.map((category, index) => (
-          <ListItem
-            key={category.id}
-            draggable
-            onDragStart={(e) => handleDragStart(e, index)} // Inicia o arraste
-            onDragOver={handleDragOver} // Permite que o item seja solto
-            onDrop={(e) => handleDrop(e, index)} // Solta o item
-            onDragEnd={handleDragEnd} // Finaliza o arraste
-            style={{
-              transition: "transform 0.2s ease", // Animação suave ao rearranjar
-              transform: draggedIndex === index ? "scale(1.05)" : "scale(1)", // Efeito ao arrastar
-              backgroundColor: draggedIndex === index ? "#f0f0f0" : "white", // Destaque visual
-            }}
-            divider
-          >
-            <ListItemText primary={category.name} />
-          </ListItem>
-        ))}
-      </List>
-    </Container>
+    <ThemeProvider theme={theme}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          width: '80vw', // Largura reduzida para 80%
+          margin: '0 auto', // Centralização horizontal
+          padding: '1rem',
+          position: 'relative', // Necessário para posicionar o Fab
+        }}
+      >
+        <Card style={{ width: '100%', position: 'relative' }}>
+          <CardHeader title="Categorias" />
+          <CardContent>
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Nome</TableCell>
+                    <TableCell>Ordem</TableCell>
+                    <TableCell align="right">Ações</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {categories.map((category) => (
+                    <TableRow key={category.id}>
+                      <TableCell>{category.name}</TableCell>
+                      <TableCell>{category.order}</TableCell>
+                      <TableCell align="right">
+                        <Button
+                          variant="outlined"
+                          color="primary"
+                          onClick={() => category.id && handleEdit(category.id)}
+                        >
+                          Editar
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            <Fab
+              color="primary"
+              aria-label="add"
+              onClick={handleNewCategory}
+              style={{
+                position: 'fixed',
+                bottom: '16px',
+                right: '16px',
+                zIndex: 1,
+              }}
+            >
+              +
+            </Fab>
+          </CardContent>
+        </Card>
+      </div>
+    </ThemeProvider>
   );
-}
+};
 
 export default CategoryList;
